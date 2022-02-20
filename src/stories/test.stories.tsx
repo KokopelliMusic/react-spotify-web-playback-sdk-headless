@@ -3,8 +3,6 @@ import SpotifyWebPlayback from '..'
 import { ComponentStory, ComponentMeta } from '@storybook/react'
 import { useRef } from 'react'
 
-const token = process.env.REACT_APP_SPOTIFY_TOKEN!
-
 export default {
   title: 'Test',
   component: SpotifyWebPlayback,
@@ -49,7 +47,10 @@ const Template: ComponentStory<typeof SpotifyWebPlayback> = (args) => {
 export const Primary = Template.bind({})
 
 Primary.args = {
-  token,
+  accessToken: process.env.REACT_APP_ACCESS_TOKEN,
+  refreshToken: process.env.REACT_APP_REFRSH_TOKEN,
+  refreshTokenAutomatically: true,
+  refreshTokenUrl: process.env.REACT_APP_TOKEN_REFRESH_URL,
   logging: true,
   volume: 20,
 }

@@ -2,7 +2,8 @@ import React from 'react'
 import { normalizeVolume } from './util'
 
 interface SpotifyWebPlaybackProps {
-  token:  string
+  accessToken?:  string
+  refreshToken?: string
 
   name?:    string
   volume?:  number
@@ -30,7 +31,18 @@ interface SpotifyWebPlaybackState {
   isPaused: boolean
   currentTrack: Spotify.Track | null
   deviceId: string
+
+  accessToken: string
+  refreshToken: string
+  tokenExpiration: Date
+  tokenRefreshInterval: NodeJS.Timer | null
 }
+
+// Interval of time in milliseconds to check if the token needs to be refreshed
+const TOKEN_CHECK_INTERVAL = 1000 * 60 * 10
+
+// Interval of time in milliseconds to refresh the token
+const TOKEN_REFRESH_INTERVAL = 1000 * 60 * 30
 
 class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
 
@@ -39,7 +51,11 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
     isPaused: false,
     isActive: false,
     currentTrack: null,
-    deviceId: ''
+    deviceId: '',
+    accessToken: '',
+    refreshToken: '',
+    tokenExpiration: new Date(),
+    tokenRefreshInterval: null
   }
 
   constructor(props: SpotifyWebPlaybackProps) {
@@ -56,6 +72,24 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
       throw new Error('[Spotify Web Playback SDK] getOAuthToken cannot be defined when refreshTokenAutomatically is set')
     }
 
+    if (this.props.refreshTokenAutomatically === undefined && this.props.getOAuthToken === undefined) {
+      this.log('getOAuthToken and refrweTokenAutomatically are not defined, using accessToken. This does mean that this token will expire in 1 hour.')
+    }
+
+    if (this.props.refreshTokenAutomatically) {
+      if (!this.props.accessToken || !this.props.refreshToken) {
+        throw new Error('[Spotify Web Playback SDK] You must provide an access token and refresh token')
+      }
+
+      this.state.tokenRefreshInterval = setInterval(async () => {
+        await this.refreshAccessToken()
+      }, TOKEN_CHECK_INTERVAL)
+      
+    }
+
+    this.state.accessToken = this.props.accessToken || ''
+    this.state.refreshToken = this.props.refreshToken || ''
+    this.state.tokenExpiration = this.props.refreshToken ? new Date() : new Date(0)
 
   }
 
@@ -225,20 +259,43 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.props.token}`,
+        'Authorization': `Bearer ${this.props.accessToken}`,
       },
       body
     })
   }
 
+  private refreshAccessToken() {
+    // TODO dit testen
+    // if the token is of unknown age, refresh it
+    // if the token is older than the max age, refresh it
+    if (!this.state.tokenExpiration || this.state.tokenExpiration < new Date(Date.now() + TOKEN_REFRESH_INTERVAL)) {
+      this.log('Spotify access token is old, refreshing')
+
+      fetch(this.props.refreshTokenUrl!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: this.props.refreshToken })
+      })
+        .then(res => res.json())
+        .then(res => {
+          this.log(res)
+        })
+        
+    }
+  }
+
   private getOAuthToken(): (cb: (token: string) => void) => void {
+    // this function is called when spotify detects when a token is expired
+    // only that detection is shit so we have to do this manually
+    
+    // if this function is implemented elsewhere, then call that one
     if (this.props.getOAuthToken) {
       return this.props.getOAuthToken
-    }
+    } 
 
-    // TODO refresh token automatically
-
-    return (cb: any) => cb(this.props.token)
+    // else, assume we are either using this.refreshAccessToken() or that this token will expire in 1 hour
+    return (cb: any) => cb(this.props.accessToken)
   }
 
   private fixSpotifyId(id: string) {
@@ -258,12 +315,12 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
   }
 
   private log(...msg: string[]) {
-    if (this.props.logging === false)
+    if (this.props.logging !== false)
       console.log('[Spotify web playback SDK]', ...msg)
   }
 
   private error(...msg: string[]) {
-    if (this.props.logging === false)
+    if (this.props.logging !== false)
       console.error('[Spotify web playback SDK]', ...msg)
   }
 
