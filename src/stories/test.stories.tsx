@@ -18,7 +18,7 @@ const Template: ComponentStory<typeof SpotifyWebPlayback> = (args) => {
   const player = useRef<SpotifyWebPlayback>(null)
 
   const playSong = () => {
-    player.current?.play('spotify:track:597i9UhHbW8hHgBUp8Tm54')
+    player.current?.play('spotify:track:4k1OADTXVmuABulPYY9IIu')
   }
 
   return <div>
@@ -40,6 +40,9 @@ const Template: ComponentStory<typeof SpotifyWebPlayback> = (args) => {
     <button onClick={() => player.current?.seek(95 * 1000)}>
       Seek to 95 seconds
     </button>
+    <button onClick={() => player.current?.setVolume(4)}>
+      Set volume to 4
+    </button>
   </div>
 
 }
@@ -47,10 +50,10 @@ const Template: ComponentStory<typeof SpotifyWebPlayback> = (args) => {
 export const Primary = Template.bind({})
 
 Primary.args = {
-  accessToken: process.env.REACT_APP_ACCESS_TOKEN,
-  refreshToken: process.env.REACT_APP_REFRSH_TOKEN,
+  accessToken: process.env.REACT_APP_SPOTIFY_TOKEN,
+  refreshToken: process.env.REACT_APP_REFRESH_TOKEN,
   refreshTokenAutomatically: true,
   refreshTokenUrl: process.env.REACT_APP_TOKEN_REFRESH_URL,
   logging: true,
-  volume: 20,
+  debug: true
 }
