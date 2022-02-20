@@ -64,6 +64,7 @@
     "@storybook/react": "^6.4.15",
     "@storybook/testing-library": "^0.0.8",
     "@types/spotify-web-playback-sdk": "^0.1.12",
-    "babel-loader": "^8.2.3"
+    "babel-loader": "^8.2.3",
+    "semantic-release": "^19.0.2"
   }
 }

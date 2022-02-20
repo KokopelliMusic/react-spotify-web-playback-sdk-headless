@@ -1,4 +1,4 @@
-import SpotifyWebPlayback from '..'
+import SpotifyWebPlayback from '../components/SpotifyWebPlayback'
 
 import { ComponentStory, ComponentMeta } from '@storybook/react'
 import { useRef } from 'react'
