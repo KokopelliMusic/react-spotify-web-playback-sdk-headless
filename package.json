@@ -66,5 +66,13 @@
     "@types/spotify-web-playback-sdk": "^0.1.12",
     "babel-loader": "^8.2.3",
     "semantic-release": "^19.0.2"
-  }
+  },
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/github",
+    "@semantic-release/npm",
+    "@semantic-release/git"
+  ]
 }
