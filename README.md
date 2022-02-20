@@ -59,7 +59,7 @@ You can add a listener by passing it as a prop to the SpotifyWebPlayback object.
 For more information see the [Spotify Developer Reference](https://developer.spotify.com/documentation/web-playback-sdk/reference/)
 
 | Listener | Description |
-|----------|----------|
+|----------|-------------|
 | onReady | Is called when the player is ready |
 | onNotReady | Is called when something went horribly wrong with initialization |
 | onPlayerStateChanged | The most interesting event, is called when a song is started, paused, finished etc. |
