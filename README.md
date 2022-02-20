@@ -1,46 +1,92 @@
-# Getting Started with Create React App
+# react-spotify-web-playback-sdk-headless
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A headless react library for the Spotify web playback SDK. Quite a name
 
-## Available Scripts
+## Why
 
-In the project directory, you can run:
+This library was build for the Kokopelli project, since the regular Spotify SDK is not very user friendly.
+It does not support playing music directly and it cannot refresh access tokens.
+This library adds simple functions to do exactly that.
 
-### `npm start`
+## How to use
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Usage is very simple, just add this to your project, preferably as high in the tree as possible (this is since re-renders can and will break the SDK)
+```jsx
+import SpotifyWebPlayback from 'react-spotify-web-playback-sdk-headless'
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+const ACCESS_TOKEN="<access_token>"
 
-### `npm test`
+const Index = () => {
+  const player = useRef<SpotifyWebPlayback>(null)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  const playSong = () => {
+    player.current?.play('spotify:track:4k1OADTXVmuABulPYY9IIu')
+  }
 
-### `npm run build`
+  return <div>
+    <button onClick={playSong}>
+      Play a song
+    </button>
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    <SpotifyWebPlayback accessToken={ACCESS_TOKEN} name="cool player" volume={50}>
+  </div>
+}
+```
+The code above will initialize the player (if the token is valid) and pressing the button will play a song from the browser!
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+To access methods use the ref as seen above.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Props
 
-### `npm run eject`
+No props are required, but the player will not play when some combinations are not present.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+| Prop | Value | Description |
+|------|-------|-------------|
+| accessToken | string | The spotify access token to use, required the streaming scope. |
+| refreshToken| string | The spotify refresh token to use, this is only used when refreshTokenAutomatically is present |
+| name | string | Name for the player (as seen from Spotify) |
+| volume | number | The volume of the player, from 1 to 100. This can be changed at all times |
+| logging | boolean | To enable logging |
+| debug | boolean | To enable debug logging, this is quite spammy |
+| refreshTokenAutomatically | boolean | To automatically refresh the accessToken, this requires refreshTokenUrl and refreshToken|
+| refreshTokenUrl | string | The URL running the token server, see below |
+| getOAuthToken | (cb: (token: string) => void) => void | This function is called by the SDK when it needs a fresh token, this can be used to implement token refreshing manually |
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Listeners
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+The SDK has a lot of event you can listen to, so this is also exposed by this library.
+You can add a listener by passing it as a prop to the SpotifyWebPlayback object.
+For more information see the [Spotify Developer Reference](https://developer.spotify.com/documentation/web-playback-sdk/reference/)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+| Listener | Description |
+|----------|----------|
+| onReady | Is called when the player is ready |
+| onNotReady | Is called when something went horribly wrong with initialization |
+| onPlayerStateChanged | The most interesting event, is called when a song is started, paused, finished etc. |
+| onInitializationError | Speaks for itself |
+| onAuthenticationError | Speaks for itself |
+| onAccountError | When a Spotify account doesnt have a premium subscription |
+| onPlaybackError | Speaks for itself |
+| onAutoplayFailed | Happens when the browser denies autoplay, this can be solved by adding a button that starts playback, or enabling autoplay |
+| songFinished | New listener, is called when a song is finished with playing |
+| onTokenRefresh | New listener, is called when a token is refreshed |
 
-## Learn More
+## Class methods
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Most functions are from the SDK and docs for that can be found on the [Spotify Developer Reference](https://developer.spotify.com/documentation/web-playback-sdk/reference/).
+But there are some new methods:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+| Method | Type | Description |
+| setVolume | (volume: number) => void | Change the volume of the player |
+| play | (spotifyId: string) => void | Play a song on the player, takes a spotify id in the `spotify:track:[id]` format, or with just the id |
+| queueSongs | (spotifyIds: string[]) => void | Adds a list of songs to the current playback queue, same format as SpotifyWebPlayback#play  |
+
+
+## Automatic Token Refreshing
+
+Token refreshing has to be done by a server, which can be found [here](https://github.com/KokopelliMusic/spotify_auth_api)
+To use this you need to add some props to your object. If you use this then you cannot use getOAuthToken
+```jsx
+<SpotifyWebPlayback accessToken="..." refreshToken="..." refreshTokenAutomatically refreshTokenUrl="<url_to_server>/spotify/auth/refresh" />
+```
+For an example of this check the 'test' story in the repo
