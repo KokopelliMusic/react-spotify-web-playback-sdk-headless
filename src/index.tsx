@@ -8,11 +8,13 @@ interface SpotifyWebPlaybackProps {
   name?:    string
   volume?:  number
   logging?: boolean
+  debug?:   boolean
 
   refreshTokenAutomatically?: boolean
   refreshTokenUrl?:           string
   getOAuthToken?:             (cb: (token: string) => void) => void 
-  
+  onTokenRefresh?:            (token: string) => void
+
   onReady?:               Spotify.PlaybackInstanceListener
   onNotReady?:            Spotify.PlaybackInstanceListener
   onPlayerStateChanged?:  Spotify.PlaybackStateListener
@@ -32,9 +34,6 @@ interface SpotifyWebPlaybackState {
   currentTrack: Spotify.Track | null
   deviceId: string
 
-  accessToken: string
-  refreshToken: string
-  tokenExpiration: Date
   tokenRefreshInterval: NodeJS.Timer | null
 }
 
@@ -43,7 +42,6 @@ const TOKEN_CHECK_INTERVAL = 1000 * 60 * 10
 
 // Interval of time in milliseconds to refresh the token
 const TOKEN_REFRESH_INTERVAL = 1000 * 60 * 30
-
 class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
 
   state: SpotifyWebPlaybackState = {
@@ -52,11 +50,11 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
     isActive: false,
     currentTrack: null,
     deviceId: '',
-    accessToken: '',
-    refreshToken: '',
-    tokenExpiration: new Date(),
     tokenRefreshInterval: null
   }
+
+  accessToken = this.props.accessToken ?? ''
+  tokenExpiration = new Date()
 
   constructor(props: SpotifyWebPlaybackProps) {
     super(props)
@@ -87,19 +85,20 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
       
     }
 
-    this.state.accessToken = this.props.accessToken || ''
-    this.state.refreshToken = this.props.refreshToken || ''
-    this.state.tokenExpiration = this.props.refreshToken ? new Date() : new Date(0)
-
   }
 
   componentDidMount() {
     window.onSpotifyWebPlaybackSDKReady = () => {
       const v = normalizeVolume(this.props.volume || 0.5)
 
+      const self = this
+
       const p = new Spotify.Player({
         name: this.props.name || 'react-spotify-web-playback-sdk-headless',
-        getOAuthToken: this.getOAuthToken(),
+        getOAuthToken: this.props.getOAuthToken || ((cb: (token: string) => void) => { 
+          self.debug('Calling getOAuthToken')
+          cb(self.accessToken) 
+        }),
         volume: v,
       })
 
@@ -172,6 +171,18 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
     if (prevProps.volume !== this.props.volume) {
       this.state.player?.setVolume(normalizeVolume(this.props.volume || 20))
     }
+  }
+
+  shouldComponentUpdate(nextProps: SpotifyWebPlaybackProps, nextState: SpotifyWebPlaybackState) {
+    return false
+  }
+
+  /** 
+   * Set the volume of the player
+   * @param volume The volume to set the player to. This is a number between 1 and 100
+  */
+  public setVolume = (volume: number) => {
+    this.state.player?.setVolume(normalizeVolume(volume))
   }
 
   /**
@@ -259,7 +270,7 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.props.accessToken}`,
+        'Authorization': `Bearer ${this.accessToken}`,
       },
       body
     })
@@ -269,8 +280,11 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
     // TODO dit testen
     // if the token is of unknown age, refresh it
     // if the token is older than the max age, refresh it
-    if (!this.state.tokenExpiration || this.state.tokenExpiration < new Date(Date.now() + TOKEN_REFRESH_INTERVAL)) {
-      this.log('Spotify access token is old, refreshing')
+    this.debug('Checking Spotify access token')
+    this.debug('Token Expiration: ' + this.tokenExpiration.getTime())
+    this.debug('Current Time: ' + new Date().getTime())
+    if (this.tokenExpiration.getTime() < (new Date()).getTime()) {
+      this.debug('Spotify access token is old, refreshing')
 
       fetch(this.props.refreshTokenUrl!, {
         method: 'POST',
@@ -279,23 +293,17 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
       })
         .then(res => res.json())
         .then(res => {
-          this.log(res)
+          if (this.props.onTokenRefresh) this.props.onTokenRefresh(res.access_token)
+          this.debug(res)
+
+          this.accessToken = res.access_token
+          this.tokenExpiration = new Date(Date.now() + TOKEN_REFRESH_INTERVAL)
+
         })
-        
+        .catch(this.error)
+    } else {
+      this.debug('Token is fine')
     }
-  }
-
-  private getOAuthToken(): (cb: (token: string) => void) => void {
-    // this function is called when spotify detects when a token is expired
-    // only that detection is shit so we have to do this manually
-    
-    // if this function is implemented elsewhere, then call that one
-    if (this.props.getOAuthToken) {
-      return this.props.getOAuthToken
-    } 
-
-    // else, assume we are either using this.refreshAccessToken() or that this token will expire in 1 hour
-    return (cb: any) => cb(this.props.accessToken)
   }
 
   private fixSpotifyId(id: string) {
@@ -317,6 +325,12 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
   private log(...msg: string[]) {
     if (this.props.logging !== false)
       console.log('[Spotify web playback SDK]', ...msg)
+  }
+
+  private debug(...msg: string[]) {
+    if (this.props.logging !== false || this.props.debug !== false) {
+      console.log('[Spotify web playback SDK] [DEBUG]', ...msg)
+    }
   }
 
   private error(...msg: string[]) {
