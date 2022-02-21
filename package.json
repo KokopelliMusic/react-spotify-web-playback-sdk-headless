@@ -17,9 +17,9 @@
     "web-vitals": "^2.1.4"
   },
   "files": [
-    "dist"
+    "build"
   ],
-  "main": "dist/index.js",
+  "main": "build/index.js",
   "scripts": {
     "eject": "react-scripts eject"
   },
