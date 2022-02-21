@@ -144,7 +144,8 @@ export default class SpotifyWebPlayback extends React.Component<SpotifyWebPlayba
 
       p.addListener('player_state_changed', e => {
         if (
-          e.track_window.previous_tracks.find(x => x.id === e.track_window.current_track.id)
+          e
+          && e.track_window.previous_tracks.find(x => x.id === e.track_window.current_track.id)
           && !this.state.isPaused
           && e.paused
         ) {
