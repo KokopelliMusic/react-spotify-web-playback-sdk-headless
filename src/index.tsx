@@ -53,7 +53,7 @@ export default class SpotifyWebPlayback extends React.Component<SpotifyWebPlayba
   }
 
   accessToken = this.props.accessToken ?? ''
-  tokenExpiration = new Date()
+  tokenExpiration = new Date(0)
 
   constructor(props: SpotifyWebPlaybackProps) {
     super(props)
