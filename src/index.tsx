@@ -78,6 +78,11 @@ export default class SpotifyWebPlayback extends React.Component<SpotifyWebPlayba
         throw new Error('[Spotify Web Playback SDK] You must provide an access token and refresh token')
       }
 
+      // Refresh the token immediatly
+      (async () => {
+        await this.refreshAccessToken()
+      })()
+
       this.state.tokenRefreshInterval = setInterval(async () => {
         await this.refreshAccessToken()
       }, TOKEN_CHECK_INTERVAL)
