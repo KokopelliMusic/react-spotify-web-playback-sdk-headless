@@ -286,7 +286,7 @@ export default class SpotifyWebPlayback extends React.Component<SpotifyWebPlayba
     this.debug('Checking Spotify access token')
     this.debug('Token Expiration: ' + this.tokenExpiration.getTime())
     this.debug('Current Time: ' + new Date().getTime())
-    if (this.tokenExpiration.getTime() < (new Date()).getTime()) {
+    if (this.tokenExpiration.getTime() <= (new Date()).getTime()) {
       this.debug('Spotify access token is old, refreshing')
 
       fetch(this.props.refreshTokenUrl!, {
