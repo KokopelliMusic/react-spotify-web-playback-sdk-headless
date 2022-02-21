@@ -143,22 +143,23 @@ export default class SpotifyWebPlayback extends React.Component<SpotifyWebPlayba
       })
 
       p.addListener('player_state_changed', e => {
-        if (
-          e
-          && e.track_window.previous_tracks.find(x => x.id === e.track_window.current_track.id)
-          && !this.state.isPaused
-          && e.paused
-        ) {
-          if (this.props.songFinished) this.props.songFinished()
+        if (e !== null) {
+          if (
+            e.track_window.previous_tracks.find(x => x.id === e.track_window.current_track.id)
+            && !this.state.isPaused
+            && e.paused
+          ) {
+            if (this.props.songFinished) this.props.songFinished()
+          }
+          
+          this.setState({
+            track: e.track_window.current_track,
+            isPaused: e.paused,
+            isActive: !!e
+          })
+  
+          if (this.props.onPlayerStateChanged) this.props.onPlayerStateChanged(e)
         }
-
-        this.setState({
-          track: e.track_window.current_track,
-          isPaused: e.paused,
-          isActive: !!e
-        })
-
-        if (this.props.onPlayerStateChanged) this.props.onPlayerStateChanged(e)
       })
 
       // Connect to the player!
