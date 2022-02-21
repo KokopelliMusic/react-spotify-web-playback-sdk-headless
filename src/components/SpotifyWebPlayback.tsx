@@ -138,19 +138,19 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
       })
 
       p.addListener('player_state_changed', e => {
-        p.getCurrentState()
-          .then(state => {
-            if (e) {
-              this.setState({
-                track: e.track_window.current_track,
-                isPaused: e.paused
-              })
-            }
-            // Reacts state batching will make sure this.setState is only called once
-            this.setState({
-              isActive: !!state
-            })
-          })
+        if (
+          e.track_window.previous_tracks.find(x => x.id === e.track_window.current_track.id)
+          && !this.state.isPaused
+          && e.paused
+        ) {
+          if (this.props.songFinished) this.props.songFinished()
+        }
+
+        this.setState({
+          track: e.track_window.current_track,
+          isPaused: e.paused,
+          isActive: !!e
+        })
 
         if (this.props.onPlayerStateChanged) this.props.onPlayerStateChanged(e)
       })
@@ -276,7 +276,6 @@ class SpotifyWebPlayback extends React.Component<SpotifyWebPlaybackProps> {
   }
 
   private refreshAccessToken() {
-    // TODO dit testen
     // if the token is of unknown age, refresh it
     // if the token is older than the max age, refresh it
     this.debug('Checking Spotify access token')
