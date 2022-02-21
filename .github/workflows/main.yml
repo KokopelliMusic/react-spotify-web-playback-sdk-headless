@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: npm install 
       - name: Build app
-        run: npx react-scripts build
+        run: npm run build
       - name: Semantic release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
