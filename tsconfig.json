@@ -8,6 +8,7 @@
       "esnext"
     ],
     "allowJs": true,
+    "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -23,5 +24,13 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/stories",
+    "build",
+    "public",
+    "example",
+    "rollup.config.js"
   ]
 }

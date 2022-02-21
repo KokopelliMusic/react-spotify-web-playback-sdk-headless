@@ -17,11 +17,17 @@
     "web-vitals": "^2.1.4"
   },
   "files": [
-    "build"
+    "dist"
   ],
-  "main": "build/index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "rollup -c",
+    "start": "rollup -c -w",
     "eject": "react-scripts eject"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0"
   },
   "eslintConfig": {
     "extends": [
@@ -68,7 +74,11 @@
     "@storybook/react": "^6.4.15",
     "@storybook/testing-library": "^0.0.8",
     "@types/spotify-web-playback-sdk": "^0.1.12",
+    "babel-core": "^6.26.3",
     "babel-loader": "^8.2.3",
+    "babel-runtime": "^6.26.0",
+    "rollup": "^2.67.3",
+    "rollup-plugin-typescript2": "^0.31.2",
     "semantic-release": "^19.0.2"
   },
   "plugins": [
